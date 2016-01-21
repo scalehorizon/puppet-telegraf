@@ -13,8 +13,11 @@
 # [*version*]
 #  handle version of telegraf
 #
-# [*install_from_repository*]
-#  Install telegraf from official repository
+# [*install_from_repository *]
+#  Install telegraf from repository
+#
+# [*config_template*]
+#  path to the template (erb file) for base configuration of telegraf
 #
 # [*manage_influx_repo*]
 #  Add the official Influx repository
@@ -26,7 +29,7 @@
 #  path to the configuration directory (snippets)
 #
 # [*outputs_influxdb_enabled*]
-#  Activate InfluxDB as a output Plugin
+#  Activate InfluxDB as a output sink
 #
 # [*outputs_influxdb_urls*]
 #  URLs to output sinks InfluxDB
@@ -49,43 +52,72 @@
 # [*agent_hostname*]
 #  Configures agent hostname for sending it to the sinks
 #
-# [*agent_collection_interval*]
-#  Configures agent collection interval
-#
 # [*agent_flush_interval*]
 #  Configures agent flush interval
-
+#
+# [*agent_interval*]
+#  Configures agent fetching interval
+#
+# [*cpu_percpu*]
+#  Configures system CPU plugin (percpu)
+#
+# [*cpu_totalcpu*]
+#  Configures system CPU plugin (totalcpu)
+#
+# [*cpu_drop*]
+#  Configures system CPU plugin (drop)
+#
+# [*disk_mountpoint*]
+#  Configures system Disk plugin (mountpoints)
+#
+# === Authors
+#
+# Roman Plessl <roman.plessl@prunux.ch>
+#
+# === Copyright
+#
+# Copyright 2015 Roman Plessl, Plessl + Burkhardt GmbH
+#
 class telegraf (
-  $ensure                    = 'installed',
-  $service_ensure            = 'running',
-  $version                   = '0.2.0',
-  $install_from_repository   = true,
-  $manage_influx_repo        = false,
-  $config_base_file          = '/etc/opt/telegraf/telegraf.conf',
-  $config_directory          = '/etc/opt/telegraf/telegraf.d',
+  $ensure                     = $::telegraf::params::ensure,
+  $version                    = $::telegraf::params::version,
+  $install_from_repository    = $::telegraf::params::install_from_repository,
+  $config_template            = $::telegraf::params::config_template,
+  $config_base_file           = $::telegraf::params::config_base_file,
+  $config_directory           = $::telegraf::params::config_directory,
 
   # [outputs.influxdb] section of telegraf.conf
-  $outputs_influxdb_enabled   = true,
-  $outputs_influxdb_urls      = ['http://localhost:8086'],
-  $outputs_influxdb_database  = 'telegraf',
-  $outputs_influxdb_username  = 'telegraf',
-  $outputs_influxdb_password  = 'metricsmetricsmetricsmetrics',
-  $outputs_influxdb_precision = 's',
+  $outputs_influxdb_enabled   = $::telegraf::params::outputs_influxdb_enabled,
+  $outputs_influxdb_urls      = $::telegraf::params::outputs_influxdb_urls,
+  $outputs_influxdb_database  = $::telegraf::params::outputs_influxdb_database,
+  $outputs_influxdb_username  = $::telegraf::params::outputs_influxdb_username,
+  $outputs_influxdb_password  = $::telegraf::params::outputs_influxdb_password,
+  $outputs_influxdb_precision = $::telegraf::params::outputs_influxdb_precision,
 
   # [tags] section of telegraf.conf
-  $tags                      = undef,
+  $tags                       = $::telegraf::params::tags,
 
   # [agent]
-  $agent_hostname            = $::hostname,
-  $agent_collection_interval = '10s',
-  $agent_flush_interval      = '10s',
-)
+  $agent_hostname             = $::telegraf::params::agent_hostname,
+  $agent_interval             = $::telegraf::params::agent_interval,
+  $agent_flush_interval       = $::telegraf::params::agent_flush_interval,
+
+  # [[plugins.cpu]]
+  $cpu_percpu                 = $::telegraf::params::cpu_percpu,
+  $cpu_totalcpu               = $::telegraf::params::cpu_totalcpu,
+  $cpu_drop                   = $::telegraf::params::cpu_drop,
+
+  # [[plugins.disk]]
+  $disk_mountpoints           = $::telegraf::params::mountpoints
+
+) inherits ::telegraf::params
 {
-  class { 'telegraf::install': }
-  ->
-  class { 'telegraf::config': }
-  ~>
-  class { 'telegraf::service': }
-  ->
-  Class['telegraf']
+  class { '::telegraf::install': }  ->
+  class { '::telegraf::config': }  ~>
+  class { '::telegraf::service': }
+
+  contain telegraf::install
+  contain telegraf::config
+  contain telegraf::service
+
 }

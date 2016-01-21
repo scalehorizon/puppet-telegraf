@@ -1,10 +1,10 @@
 ## Overview
-[![Build Status](https://travis-ci.org/rplessl/puppet-telegraf.png)](https://travis-ci.org/rplessl/puppet-telegraf)
+[![Build Status](https://travis-ci.org/rplessl/puppet-telegraf.svg?branch=master)](https://travis-ci.org/rplessl/puppet-telegraf?branch=master)
 [![rplessl-telegraf](https://img.shields.io/puppetforge/r/rplessl/telegraf.svg)](https://forge.puppetlabs.com/rplessl/telegraf)
 
-This Puppet module installs and manages [InfluxDB Telegraf](https://github.com/influxdb/telegraf). 
+This Puppet module installs and manages [InfluxDB Telegraf](https://github.com/influxdb/telegraf).
 
-Use this puppet module to install and configure [InfluxDB Telegraf](https://github.com/influxdb/telegraf) with version 0.2.0 and newer.
+Use this puppet module to install and configure [InfluxDB Telegraf](https://github.com/influxdb/telegraf) with version 0.2.4 and newer.
 
 #### Table of Contents
 
@@ -29,6 +29,8 @@ The installed package for telegraf will be fetched from
   a) the provided package from get.influxdb.com or
   b) the provided package from your own repository (apt repository, aptly, yum)
 
+Remark: The apt / yum repository from InfluxData will be included in version 0.3.0 of this module.
+
 ## Setup
 
 ### Setup Requirements
@@ -37,11 +39,14 @@ puppet-telegraf requires only the [wget](https://forge.puppetlabs.com/maestrodev
 
 ### Beginning with telegraf
 
-Include the class and set the InfluxDB parameters.
+Include the class and set the necessary Telegraf and InfluxDB parameters.
 
 ```
-class { 'telegraf':
+class { '::telegraf':
+    version                   => '0.2.4',
     install_from_repository   => false,
+    config_template           => 'telegraf/telegraf.conf.erb',
+    # [outputs.influxdb] section of telegraf.conf
     outputs_influxdb_enabled  => true,
     outputs_influxdb_urls     => ['http://localhost:8086'],
     outputs_influxdb_database => 'telegraf',
@@ -50,13 +55,14 @@ class { 'telegraf':
 }
 ```
 
-This telegraf module supports the following configuration options:
+This puppet-telegraf module supports the following configuration options:
 
 ```
-class { 'telegraf':
+class { '::telegraf':
     ensure                    => 'installed',
-    version                   => '0.2.0',
-    install_from_repository   => true,
+    version                   => '0.2.4',
+    install_from_repository   => false,
+    config_template           => 'telegraf/telegraf.conf.erb',
     config_base_file          => '/etc/opt/telegraf/telegraf.conf',
     config_directory          => '/etc/opt/telegraf/telegraf.d',
 
@@ -77,10 +83,52 @@ class { 'telegraf':
 
     # [agent]
     agent_hostname            => $::hostname,
+    agent_interval            => '10s',
+
+    # [[plugins.cpu]]
+    cpu_percpu                => true,
+    cpu_totalcpu              => true,
+    cpu_drop                  => ["cpu_time"],
+
+    # [[plugins.disk]]
+    disk_mountpoints           = ["/","/home"],
 }
 ```
 
-## Development 
+### Plugins
+
+The following plugins have been prepared for input / output configuration of Telegraf.
+
+1. OpenTSDB
+  ```
+  class { '::telegraf::plugins::opentsdb':
+    opentsdb_server => 'my.opentsdb.server.domain.com',
+    opentsdb_port   => 4242,
+    opentsdb_prefix => 'my.metrics.telegraf.',
+  }
+  ```
+
+2. MySQL
+  ```
+  include '::telegraf::plugins::mysql'
+  ```
+
+3. PostgreSQL
+  ```
+  include '::telegraf::plugins::postgresql'
+  ```
+
+4. PuppetAgent
+  ```
+  include '::telegraf::plugins::puppetagent'
+  ```
+
+5. Elasticsearch
+  ```
+  class { '::telegraf::plugins::elasticsearch': }
+  ```
+
+## Development
 
 1. Fork it (https://github.com/rplessl/puppet-telegraf/fork)
 2. Create your feature branch (`git checkout -b my-new-feature`)

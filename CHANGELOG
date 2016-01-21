@@ -1,3 +1,20 @@
+## v0.2.4 [2015-12-25]
+
+* Enhanced documenttion for using pulgins (Closes #16, #17) -- @rplessl
+* Enhanced for puppet 4 compatiblity (closes #15) -- @rplessl
+* Changed puppet module to parameterization -- Thanks @ntent-ashton!
+* Added Elasticsearch plugin -- Thanks @ntent-ashton!
+* Added parametrization for CPU / Mountpoints -- Thanks @ntent-ashton!
+* New Upstream Release and Interface for InfluxData Telegraf 0.2.4 -- @rplessl
+* Restart Telegraf Service if output plugin configuration changes -- @rplessl
+* Added configurable Output-Plugins for
+  - OpenTSDB -- @rplessl
+* Added configurable Input-Plugins for
+  - Mysql -- @rplessl
+  - PostgreSQL -- @rplessl
+  - PuppetAgent -- @rplessl
+
+
 ## v0.2.0 [2015-11-09]
 
 * Updated installation manual in README.md -- @rplessl

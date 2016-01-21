@@ -26,7 +26,7 @@
 #   dc = "us-east-1"
 <% if @tags -%>
 [tags]
-<%   @tags.each do |key, value| -%>
+<%   @tags.sort.each do |key, value| -%>
    <%= key %> = "<%= value %>"
 <%   end -%>
 <% end -%>
@@ -34,7 +34,7 @@
 # Configuration for telegraf agent
 [agent]
   # Default data collection interval for all plugins
-  interval = "<%= @agent_collection_interval %>"
+  interval = "<%= @agent_interval %>"
   # Rounds collection interval to 'interval'
   # ie, if interval="10s" then always collect on :00, :10, :20, etc.
   round_interval = true
@@ -64,12 +64,12 @@
 
 <% if @outputs_influxdb_enabled -%>
 # Configuration for influxdb server to send metrics to
-[outputs.influxdb]
+[[outputs.influxdb]]
   # The full HTTP endpoint URL for your InfluxDB instance
   # Multiple urls can be specified for InfluxDB cluster support. Server to
   # write to will be randomly chosen each interval.
   # urls = ["http://localhost:8086"] # required.
-  urls = ["<%= @outputs_influxdb_urls.join('","') %>"]
+  urls = <%= @outputs_influxdb_urls.inspect %>
 
   # The target database for metrics. This database must already exist
   # database = "telegraf" # required.
@@ -98,27 +98,27 @@
 #                                  PLUGINS                                    #
 ###############################################################################
 
+[plugins]
+
 # Read metrics about cpu usage
-[cpu]
+[[plugins.cpu]]
   # Whether to report per-cpu stats or not
-  percpu = true
+  percpu = <%= scope['::telegraf::cpu_percpu']%>
   # Whether to report total system cpu stats or not
-  totalcpu = true
+  totalcpu = <%= scope['::telegraf::cpu_totalcpu']%>
   # Comment this line if you want the raw CPU time metrics
-  drop = ["cpu_time"]
+  drop = <%= scope['::telegraf::cpu_drop']%>
 
 # Read metrics about disk usage by mount point
-[disk]
-  # no active configuration changes
-  #
+[[plugins.disk]]
   # By default, telegraf gather stats for all mountpoints.
   # Setting mountpoints will restrict the stats to the specified mountpoints.
-  # Mountpoints=["/"]
+<% if scope['::telegraf::disk_mountpoints.any?']%>
+  Mountpoints = <%= scope['::telegraf::disk_mountpoints'].inspect %>
+<% end %>
 
 # Read metrics about disk IO by device
-[io]
-  # no active configuration changes
-  #
+[[plugins.io]]
   # By default, telegraf will gather stats for all devices including
   # disk partitions.
   # Setting devices will restrict the stats to the specified devcies.
@@ -127,23 +127,28 @@
   # SkipSerialNumber = true
 
 # Read metrics about memory usage
-[mem]
+[[plugins.mem]]
   # no configuration
 
 # Read metrics about network usage
-[net]
-  # no active configuration changes
-  #
+[[plugins.net]]
   # By default, telegraf gathers stats from any up interface (excluding loopback)
   # Setting interfaces will tell it to gather these explicit interfaces,
   # regardless of status.
   #
   # interfaces = ["eth0", ... ]
+  #
+  # We drop not wanted icmp metrics
+  drop = ["net_icmp"]
 
 # Read metrics about swap memory usage
-[swap]
+[[plugins.swap]]
   # no configuration
 
 # Read metrics about system load & uptime
-[system]
+[[plugins.system]]
   # no configuration
+
+###############################################################################
+#                         SERVICE PLUGINS                                     #
+###############################################################################
